@@ -36,12 +36,12 @@ class MarkovDecisionProcess:
 					utility[u] = max(utility[u], c)
 				if abs(utility[u] - prev_utility[u]) > max_delta:
 					flag = True
-			self.print_utility()
+			#self.print_utility()
 
 	def print_utility(self):
 		for u in range(0, len(utility)):
 			print "Utitlty of state " + str(u) + " is :" + str(utility[u])
-		raw_input()
+		
 
 """
 Define a simple GridWorld
@@ -154,3 +154,4 @@ utility = [x for x in reward]
 mdp = MarkovDecisionProcess(states, actions, transition, reward, utility, terminal_states)
 
 mdp.value_iteration()
+mdp.print_utility()
