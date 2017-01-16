@@ -5,22 +5,21 @@ class MarkovDecisionProcess:
 	Actions are also numbered from o to m-1 where m is the number of states
 	transition is a 3D array 
 		transition[s][a][sprime] returns the probability of ending at a state sprime on taking action a at state s
-	reward is a 3D array
-		reward[s][a][sprime] stores the reward on reaching state sprime from state s on taking action a
+	reward is a 1D array
+		reward[s] stores the reward on reaching state s
 	utility stores the utility of every state under a policy p
 	"""
-	def __init__(self, states, actions, transition, reward, utility, terminal_states):
+	def __init__(self, states, actions, transition, reward, utility, terminal_states, gamma):
 		self.states = states
 		self.transition = transition
 		self.actions = actions
 		self.reward = reward
 		self.utility = utility
 		self.terminal_states = terminal_states
-
+		self.gamma = gamma
 
 	def value_iteration(self):
 		max_delta = 10**(-6)
-		gamma = 0.9
 		flag = True
 		while flag:
 			flag = False
@@ -32,16 +31,74 @@ class MarkovDecisionProcess:
 				for a in actions:
 					c = 0
 					for s in states:
-						c += transition[u][a][s] * (reward[u] + gamma * prev_utility[s])
+						c += transition[u][a][s] * (reward[u] + self.gamma * prev_utility[s])
 					utility[u] = max(utility[u], c)
 				if abs(utility[u] - prev_utility[u]) > max_delta:
 					flag = True
 			#self.print_utility()
 
 	def print_utility(self):
-		for u in range(0, len(utility)):
+		for u in states:
 			print "Utitlty of state " + str(u) + " is :" + str(utility[u])
-		
+	
+	def print_policy(self, policy):
+		for u in states:
+			print "Optimal Policy at state " + str(u) + "is :" + str(policy[u])
+			
+	
+	def policy_evaluate(self, policy):
+		"""Policy Evaluation
+   		"""
+   		gamma = self.gamma
+		delta = 0
+   		while delta < 10**(-6):
+   			delta = 0
+   			for s in states:
+   				if s in terminal_states:
+   					continue
+   				a = policy[s]
+   				v = utility[s]
+   				utility[s] = 0
+   				for sprime in states:
+   					utility[s] += transition[s][a][sprime] * (reward[s] + gamma*utility[sprime])
+
+ 				delta = max(delta, abs(v - utility[s]))
+ 		
+
+
+
+	def policy_iteration(self):
+		"""
+		Start from an arbitary policy
+		"""
+		policy = [0] * len(states)
+		for j in terminal_states:
+			policy[j] = -1
+		gamma = self.gamma
+		flag = True
+		while flag:
+			self.policy_evaluate(policy)
+			flag = False
+			prev_policy = [x for x in policy]
+
+			for s in states:
+				if s in terminal_states:
+					continue
+				max_util = 0
+				for a in actions:
+					curr_util = 0
+					for sprime in states:
+						curr_util += transition[s][a][sprime] * (reward[s] + gamma * utility[sprime])
+					
+					if max_util < curr_util:
+						max_util = curr_util
+						policy[s] = a
+
+				if prev_policy[s] != policy[s]:
+					flag = True
+
+		self.print_policy(policy)
+
 
 """
 Define a simple GridWorld
@@ -75,7 +132,7 @@ for i in states:
 	for j in range(0, m):
 		transition[i][j] = [0]*n
 
-	if i < 8 and i!=2:
+	if i < 8 and i!=1:
 		transition[i][0][i+4] = 0.8
 	else:
 		transition[i][0][i] = 0.8
@@ -92,7 +149,7 @@ for i in states:
 
 	
 	#action left
-	if i < 8 and i!=2:
+	if i < 8 and i!=1:
 		transition[i][1][i+4] = 0.1
 	else:
 		transition[i][1][i] = 0.1
@@ -109,7 +166,7 @@ for i in states:
 
 	#action right
 	
-	if i < 8 and i!=2:
+	if i < 8 and i!=1:
 		transition[i][2][i+4] = 0.1
 	else:
 		transition[i][2][i] = 0.1
@@ -151,7 +208,8 @@ terminal_states = [11, 7]
 
 utility = [x for x in reward]
 
-mdp = MarkovDecisionProcess(states, actions, transition, reward, utility, terminal_states)
+mdp = MarkovDecisionProcess(states, actions, transition, reward, utility, terminal_states, 0.9)
 
-mdp.value_iteration()
-mdp.print_utility()
+mdp.policy_iteration()
+#mdp.value_iteration()
+#mdp.print_utility()
